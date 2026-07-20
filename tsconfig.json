@@ -1,0 +1,13 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/platform-contracts" },
+    { "path": "packages/platform-auth" },
+    { "path": "packages/platform-http" },
+    { "path": "packages/platform-events" },
+    { "path": "packages/platform-observability" },
+    { "path": "packages/design-system" },
+    { "path": "apps/shell" },
+    { "path": "apps/operations-remote" }
+  ]
+}

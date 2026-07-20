@@ -1,0 +1,11 @@
+{
+  "remotes": [
+    {
+      "name": "operations",
+      "entryUrl": "http://localhost:3001/remoteEntry.js",
+      "exposedModule": "./App",
+      "version": "0.1.0-local",
+      "enabled": true
+    }
+  ]
+}
