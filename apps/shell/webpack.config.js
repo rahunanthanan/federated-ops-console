@@ -16,7 +16,22 @@ module.exports = {
   devServer: {
     port: 3000,
     historyApiFallback: true,
-    headers: { 'Access-Control-Allow-Origin': '*' }
+    headers: (req, res, context) => {
+      // webpack-dev-server can't statically detect a wildcard ACAO once
+      // `headers` is a function (needed here for per-path Cache-Control), so
+      // it defensively adds Cross-Origin-Resource-Policy: same-origin - which
+      // would block the shell's cross-origin remoteEntry.js script load.
+      // Override it explicitly since this dev server intentionally serves
+      // cross-origin for Module Federation.
+      const base = { 'Access-Control-Allow-Origin': '*', 'Cross-Origin-Resource-Policy': 'cross-origin' };
+      // The manifest is the version-discovery source of truth - it must never
+      // be served stale, or a shipped remote update would silently go unseen.
+      // See the caching strategy comment in src/remotes/loadRemote.ts.
+      if (req.url && req.url.startsWith('/manifest.local.json')) {
+        return { ...base, 'Cache-Control': 'no-cache' };
+      }
+      return base;
+    }
   },
   output: {
     publicPath: 'auto',

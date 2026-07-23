@@ -14,9 +14,12 @@
     "start": "concurrently -k -n remote,shell -c blue,green \"npm run start --workspace=apps/operations-remote\" \"npm run start --workspace=apps/shell\"",
     "start:remote": "npm run start --workspace=apps/operations-remote",
     "start:shell": "npm run start --workspace=apps/shell",
+    "dev:webpack": "npm run start",
+    "dev:rsbuild": "concurrently -k -n remote,shell -c blue,green \"npm run dev:rsbuild --workspace=apps/operations-remote\" \"npm run dev:rsbuild --workspace=apps/shell\"",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "jest",
     "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "lint": "eslint . --ext .ts,.tsx"
   },
   "devDependencies": {

@@ -17,7 +17,7 @@ test.describe('federated-ops-console shell + operations remote', () => {
   test('switching region updates the regional configuration summary', async ({ page }) => {
     await page.goto('/');
     await page.getByLabel('Region').selectOption('MY');
-    await expect(page.getByText('MYR')).toBeVisible();
+    await expect(page.getByText('MYR', { exact: true })).toBeVisible();
   });
 
   test('submitting the schema-driven service request form records an audit entry', async ({ page }) => {

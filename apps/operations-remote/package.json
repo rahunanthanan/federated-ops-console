@@ -5,15 +5,17 @@
   "scripts": {
     "start": "webpack serve --config webpack.config.js --mode development",
     "build": "webpack --config webpack.config.js --mode production",
+    "dev:webpack": "webpack serve --config webpack.config.js --mode development",
+    "dev:rsbuild": "rsbuild dev",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "jest -c jest.config.js"
   },
   "dependencies": {
     "@platform/contracts": "*",
-    "@platform/http": "*",
-    "@platform/events": "*",
-    "@platform/observability": "*",
     "@platform/design-system": "*",
+    "@platform/events": "*",
+    "@platform/http": "*",
+    "@platform/observability": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zod": "^3.23.8"
@@ -23,6 +25,9 @@
     "@babel/preset-env": "^7.24.8",
     "@babel/preset-react": "^7.24.7",
     "@babel/preset-typescript": "^7.24.7",
+    "@module-federation/rsbuild-plugin": "^2.8.0",
+    "@rsbuild/core": "^2.1.7",
+    "@rsbuild/plugin-react": "^2.1.0",
     "@testing-library/jest-dom": "^6.4.8",
     "@testing-library/react": "^14.3.1",
     "@testing-library/user-event": "^14.5.2",

@@ -3,7 +3,28 @@ import type { ComponentType } from 'react';
 import type { RemoteDescriptor, ObservabilityClient, RegionCode } from '@platform/contracts';
 import { Banner, Button, Card } from '@platform/design-system';
 import { loadRemoteModule } from './loadRemote';
+import type { RemoteLoadDiagnosticEvent } from './loadRemote';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+
+// Demo-only visibility into the load/timeout/retry lifecycle from
+// loadRemote.ts, surfaced as a live status line under the "Loading…" state.
+// Flip to false to go back to a plain, silent loading state.
+const SHOW_LOAD_DIAGNOSTICS = true;
+
+function describeDiagnosticEvent(event: RemoteLoadDiagnosticEvent): string {
+  switch (event.stage) {
+    case 'attempt-start':
+      return `Loading operations… (attempt ${event.attempt})`;
+    case 'timeout':
+      return `Attempt ${event.attempt} timed out after ${event.timeoutMs}ms`;
+    case 'retry-start':
+      return 'Retrying…';
+    case 'success':
+      return `Loaded on attempt ${event.attempt} in ${Math.round(event.durationMs)}ms`;
+    case 'failure':
+      return `Attempt ${event.attempt} failed: ${event.error}`;
+  }
+}
 
 type LoadState =
   | { status: 'loading' }
@@ -19,6 +40,7 @@ export function RemoteLoader({ descriptor, region, observability, route }: {
 }) {
   const [state, setState] = useState<LoadState>(descriptor.enabled ? { status: 'loading' } : { status: 'disabled' });
   const [retryCount, setRetryCount] = useState(0);
+  const [diagnosticText, setDiagnosticText] = useState<string | null>(null);
 
   useEffect(() => {
     if (!descriptor.enabled) {
@@ -27,8 +49,15 @@ export function RemoteLoader({ descriptor, region, observability, route }: {
     }
     let cancelled = false;
     setState({ status: 'loading' });
+    setDiagnosticText(null);
 
-    loadRemoteModule<{ default: ComponentType }>(descriptor)
+    loadRemoteModule<{ default: ComponentType }>(descriptor, {
+      onAttempt: SHOW_LOAD_DIAGNOSTICS
+        ? (event) => {
+            if (!cancelled) setDiagnosticText(describeDiagnosticEvent(event));
+          }
+        : undefined
+    })
       .then((result) => {
         if (cancelled) return;
         observability.recordMetric('remote.load.duration_ms', result.durationMs, {
@@ -52,9 +81,12 @@ export function RemoteLoader({ descriptor, region, observability, route }: {
     return () => {
       cancelled = true;
     };
-    // Re-run when the user explicitly retries (retryCount) or the descriptor changes.
+    // Re-run when the user explicitly retries (retryCount) or the descriptor
+    // changes - including a version-only bump (same entryUrl, new version),
+    // which is what makes the version-aware scriptCache in loadRemote.ts
+    // actually get exercised instead of sitting dead.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [descriptor.entryUrl, descriptor.enabled, retryCount]);
+  }, [descriptor.entryUrl, descriptor.enabled, descriptor.version, retryCount]);
 
   if (state.status === 'disabled') {
     return (
@@ -70,6 +102,9 @@ export function RemoteLoader({ descriptor, region, observability, route }: {
     return (
       <Card>
         <p>Loading {descriptor.name}…</p>
+        {SHOW_LOAD_DIAGNOSTICS && diagnosticText && (
+          <p style={{ marginTop: 4, fontSize: 12, fontFamily: 'monospace', opacity: 0.7 }}>{diagnosticText}</p>
+        )}
       </Card>
     );
   }

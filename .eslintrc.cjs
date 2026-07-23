@@ -28,5 +28,5 @@ module.exports = {
       }
     ]
   },
-  ignorePatterns: ['dist', 'build', 'node_modules']
+  ignorePatterns: ['dist', 'dist-rsbuild', 'build', 'node_modules']
 };

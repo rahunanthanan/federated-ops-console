@@ -14,12 +14,37 @@ module.exports = {
   mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   devServer: {
     port: 3001,
-    headers: { 'Access-Control-Allow-Origin': '*' }
+    headers: (req, res, context) => {
+      // webpack-dev-server can't statically detect a wildcard ACAO once
+      // `headers` is a function (needed here for per-path Cache-Control), so
+      // it defensively adds Cross-Origin-Resource-Policy: same-origin - which
+      // would block the shell (port 3000) from cross-origin-loading this
+      // remote's scripts. Override it explicitly - this dev server
+      // intentionally serves cross-origin for Module Federation.
+      const base = { 'Access-Control-Allow-Origin': '*', 'Cross-Origin-Resource-Policy': 'cross-origin' };
+      // remoteEntry.js has a stable, non-hashed filename by design (consumers
+      // need a fixed URL to reference) so, like the manifest, it can't rely on
+      // its URL changing to signal new content - it must be revalidated every
+      // request. See the caching strategy comment in
+      // apps/shell/src/remotes/loadRemote.ts.
+      if (req.url === '/remoteEntry.js') {
+        return { ...base, 'Cache-Control': 'no-cache' };
+      }
+      // Everything remoteEntry.js references is content-hashed
+      // ([contenthash] in output.chunkFilename below), so a changed file is
+      // always a new URL - safe to cache forever.
+      if (req.url && /\.[0-9a-f]{8}\.js$/.test(req.url)) {
+        return { ...base, 'Cache-Control': 'public, max-age=31536000, immutable' };
+      }
+      return base;
+    }
   },
   output: {
     publicPath: 'auto',
     path: path.resolve(__dirname, 'dist'),
-    clean: true
+    clean: true,
+    filename: '[name].js',
+    chunkFilename: '[name].[contenthash:8].js'
   },
   resolve: { extensions: ['.tsx', '.ts', '.js'] },
   module: {
